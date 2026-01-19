@@ -133,12 +133,13 @@ class _PrincipalPageState extends State<PrincipalPage> {
 
   // Carga los marcadores con la función de abrir ventana al pulsar (onTap)
   Future<void> _loadCustomMarkers() async {
-    _greenIcon = await BitmapDescriptor.fromAssetImage(
-      const ImageConfiguration(size: Size(50, 50)),
+    _greenIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(25, 25)),
       'assets/imagenes/scooter-green.png',
     );
-    _blueIcon = await BitmapDescriptor.fromAssetImage(
-      const ImageConfiguration(size: Size(50, 50)),
+
+    _blueIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(25, 25)),
       'assets/imagenes/scooter-blue.png',
     );
 
@@ -149,10 +150,11 @@ class _PrincipalPageState extends State<PrincipalPage> {
           position: const LatLng(36.6870, -6.1260),
           icon: _greenIcon ?? BitmapDescriptor.defaultMarker,
           onTap: () => _mostrarDetalles(
-            'Lime Nº5432',
-            '0,20€/min',
-            '85%',
-            'Kilómetros de autonomía: 20 km',
+            'Lime Nº5431',
+            '0.85€',
+            '86%',
+            '28 km',
+            'assets/imagenes/patinete-lime.png',
             Colors.green,
           ),
         ),
@@ -162,9 +164,10 @@ class _PrincipalPageState extends State<PrincipalPage> {
           icon: _blueIcon ?? BitmapDescriptor.defaultMarker,
           onTap: () => _mostrarDetalles(
             'Bird Nº01238',
-            '0,25€/min',
+            '0.90€',
             '64%',
-            'Kilómetros de autonomía: 16 km',
+            '16 km',
+            'assets/imagenes/patinete-bird.png',
             Colors.blue,
           ),
         ),
@@ -172,99 +175,101 @@ class _PrincipalPageState extends State<PrincipalPage> {
     });
   }
 
-  // LA VENTANA DE TU FIGMA
+  // VENTANAS
   void _mostrarDetalles(
     String marca,
     String precio,
     String bateria,
     String autonomia,
+    String imagenRuta,
     Color color,
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Para que la tarjeta flote
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return Container(
-          margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
+              Text(
+                marca,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              Image.asset(imagenRuta, height: 120, fit: BoxFit.contain),
+
+              const SizedBox(height: 15),
+
+              GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: 2,
+                childAspectRatio: 2.2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Icon(Icons.electric_scooter, color: color, size: 40),
+                  _buildInfoCell(
+                    "Batería",
+                    bateria,
+                    Icons.battery_charging_full,
                   ),
-                  const SizedBox(width: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        marca,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        precio,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        autonomia,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Column(
-                    children: [
-                      const Icon(Icons.battery_3_bar, color: Colors.green),
-                      Text(
-                        bateria,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  _buildInfoCell("Autonomía", autonomia, Icons.bolt),
+                  _buildInfoCell("Precio desbloqueo", "1.00€", Icons.lock_open),
+                  _buildInfoCell(
+                    "Precio por minuto",
+                    precio,
+                    Icons.timer_outlined,
                   ),
                 ],
               ),
-              const SizedBox(height: 25),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0066CC),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0066CC),
+                  minimumSize: const Size(double.infinity, 55),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const Text(
-                    'Reservar ahora',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "Coger patinete",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildInfoCell(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 
