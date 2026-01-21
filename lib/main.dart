@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -113,7 +117,7 @@ class PrincipalPage extends StatefulWidget {
 }
 
 class _PrincipalPageState extends State<PrincipalPage> {
-  late GoogleMapController _mapController;
+  GoogleMapController? _mapController;
   final TextEditingController _searchController = TextEditingController();
 
   BitmapDescriptor? _greenIcon;
@@ -128,54 +132,88 @@ class _PrincipalPageState extends State<PrincipalPage> {
   @override
   void initState() {
     super.initState();
-    _loadCustomMarkers();
+    _inicializarDatos();
   }
 
-  // Carga los marcadores con la función de abrir ventana al pulsar (onTap)
-  Future<void> _loadCustomMarkers() async {
-    _greenIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(25, 25)),
-      'assets/imagenes/scooter-green.png',
-    );
+  // Carga secuencial: Primero iconos, luego datos de Firebase
+  Future<void> _inicializarDatos() async {
+    try {
+      _greenIcon = await BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(25, 25)),
+        'assets/imagenes/scooter-green.png',
+      );
 
-    _blueIcon = await BitmapDescriptor.asset(
-      const ImageConfiguration(size: Size(25, 25)),
-      'assets/imagenes/scooter-blue.png',
-    );
+      _blueIcon = await BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(25, 25)),
+        'assets/imagenes/scooter-blue.png',
+      );
 
-    setState(() {
-      _markers = {
-        Marker(
-          markerId: const MarkerId('p_verde_1'),
-          position: const LatLng(36.6870, -6.1260),
-          icon: _greenIcon ?? BitmapDescriptor.defaultMarker,
-          onTap: () => _mostrarDetalles(
-            'Lime Nº5431',
-            '0.85€',
-            '86%',
-            '28 km',
-            'assets/imagenes/patinete-lime.png',
-            Colors.green,
-          ),
-        ),
-        Marker(
-          markerId: const MarkerId('p_azul_1'),
-          position: const LatLng(36.6830, -6.1280),
-          icon: _blueIcon ?? BitmapDescriptor.defaultMarker,
-          onTap: () => _mostrarDetalles(
-            'Bird Nº01238',
-            '0.90€',
-            '64%',
-            '16 km',
-            'assets/imagenes/patinete-bird.png',
-            Colors.blue,
-          ),
-        ),
-      };
-    });
+      _escucharPatinetes();
+    } catch (e) {
+      debugPrint("Error cargando assets: $e");
+      // Si fallan los assets, intentamos cargar los datos igual con iconos por defecto
+      _escucharPatinetes();
+    }
   }
 
-  // VENTANAS
+  void _escucharPatinetes() {
+    FirebaseFirestore.instance
+        .collection('patinetes')
+        .snapshots()
+        .listen(
+          (snapshot) {
+            if (!mounted) return;
+
+            Set<Marker> nuevosMarcadores = {};
+
+            for (var doc in snapshot.docs) {
+              final data = doc.data();
+
+              // Función de seguridad para convertir String o Number a Double de forma segura
+              double? lat = double.tryParse(data['latitud'].toString());
+              double? lng = double.tryParse(data['longitud'].toString());
+
+              // Si las coordenadas no son válidas, saltamos este patinete
+              if (lat == null || lng == null) {
+                debugPrint("Patinete ${doc.id} tiene coordenadas inválidas");
+                continue;
+              }
+
+              BitmapDescriptor icono = data['color'] == 'verde'
+                  ? (_greenIcon ?? BitmapDescriptor.defaultMarker)
+                  : (_blueIcon ?? BitmapDescriptor.defaultMarker);
+
+              nuevosMarcadores.add(
+                Marker(
+                  markerId: MarkerId(doc.id),
+                  position: LatLng(
+                    lat,
+                    lng,
+                  ), // Ahora usamos los valores convertidos
+                  icon: icono,
+                  onTap: () => _mostrarDetalles(
+                    data['nombre'] ?? 'Sin nombre',
+                    data['precio'] ?? '0.00€',
+                    data['bateria'] ?? '0%',
+                    data['autonomia'] ?? '0 km',
+                    data['imagen'] ?? 'assets/imagenes/mapa.png',
+                    data['color'] == 'verde' ? Colors.green : Colors.blue,
+                  ),
+                ),
+              );
+            }
+
+            setState(() {
+              _markers = nuevosMarcadores;
+            });
+          },
+          onError: (error) {
+            debugPrint("Error en Firestore: $error");
+          },
+        );
+  }
+
+  // VENTANA DE DETALLES (showModalBottomSheet)
   void _mostrarDetalles(
     String marca,
     String precio,
@@ -207,11 +245,8 @@ class _PrincipalPageState extends State<PrincipalPage> {
                 ),
               ),
               const SizedBox(height: 10),
-
               Image.asset(imagenRuta, height: 120, fit: BoxFit.contain),
-
               const SizedBox(height: 15),
-
               GridView.count(
                 shrinkWrap: true,
                 crossAxisCount: 2,
@@ -260,21 +295,24 @@ class _PrincipalPageState extends State<PrincipalPage> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey[300],
+        color: Colors.grey[200],
         borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
         ],
       ),
     );
   }
 
   void _buscarYFijarZona(String texto) {
-    _mapController.animateCamera(
+    _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(const LatLng(36.6850, -6.1260), 16),
     );
   }

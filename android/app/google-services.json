@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "404450069376",
+    "project_id": "patinet-29c9a",
+    "storage_bucket": "patinet-29c9a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404450069376:android:fab5133ec4d74402a9cf65",
+        "android_client_info": {
+          "package_name": "com.example.patinet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfOR2hWzjlovSFCisvJPjx6oW85q6JjPI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
