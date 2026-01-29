@@ -152,7 +152,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
                 radius: 50,
                 backgroundImage: AssetImage(
                   'assets/imagenes/usuario.png',
-                ), // Foto de perfil
+                ), // Foto de perfil 
               ),
               const SizedBox(height: 15),
               const Text(
