@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'viaje_page.dart';
+import 'historial_page.dart';
 
 class PrincipalPage extends StatefulWidget {
   const PrincipalPage({super.key});
@@ -12,9 +13,7 @@ class PrincipalPage extends StatefulWidget {
 }
 
 class _PrincipalPageState extends State<PrincipalPage> {
-  int _selectedIndex = 0; // 0 para Mapa, 1 para Perfil
-
-  // --- VARIABLES DEL MAPA ---
+  int _selectedIndex = 0;
   GoogleMapController? _mapController;
   final TextEditingController _searchController = TextEditingController();
   BitmapDescriptor? _greenIcon;
@@ -58,13 +57,10 @@ class _PrincipalPageState extends State<PrincipalPage> {
         final data = doc.data();
         double? lat = double.tryParse(data['latitud'].toString());
         double? lng = double.tryParse(data['longitud'].toString());
-
         if (lat == null || lng == null) continue;
-
         BitmapDescriptor icono = data['color'] == 'verde'
             ? (_greenIcon ?? BitmapDescriptor.defaultMarker)
             : (_blueIcon ?? BitmapDescriptor.defaultMarker);
-
         nuevosMarcadores.add(
           Marker(
             markerId: MarkerId(doc.id),
@@ -142,7 +138,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
   // --- VISTA DEL PERFIL ---
   Widget _buildPerfilView() {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Gris claro de fondo
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 25),
@@ -151,9 +147,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
               const SizedBox(height: 30),
               const CircleAvatar(
                 radius: 50,
-                backgroundImage: AssetImage(
-                  'assets/imagenes/usuario.png',
-                ), // Foto de perfil
+                backgroundImage: AssetImage('assets/imagenes/usuario.png'),
               ),
               const SizedBox(height: 15),
               const Text(
@@ -174,7 +168,21 @@ class _PrincipalPageState extends State<PrincipalPage> {
                   children: [
                     _buildPerfilItem("Editar Nombre", null),
                     _buildPerfilItem("Editar Apellidos", null),
-                    _buildPerfilItem("Ultimos viajes", "Ver"),
+
+                    // --- MODIFICACIÓN AQUÍ: AÑADIMOS NAVEGACIÓN ---
+                    _buildPerfilItem(
+                      "Ultimos viajes",
+                      "Ver",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HistorialPage(),
+                          ),
+                        );
+                      },
+                    ),
+
                     _buildPerfilItem("Mas información", "Detalles"),
                     _buildPerfilItem("Modificar método de pago", "Modificar"),
                     _buildPerfilItem("Tamaño de letra", "Mediano"),
@@ -199,8 +207,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () =>
-                    FirebaseAuth.instance.signOut(), // Cierre de sesión real
+                onPressed: () => FirebaseAuth.instance.signOut(),
                 child: const Text(
                   "Cerrar sesión",
                   style: TextStyle(color: Colors.white, fontSize: 18),
@@ -214,7 +221,12 @@ class _PrincipalPageState extends State<PrincipalPage> {
     );
   }
 
-  Widget _buildPerfilItem(String title, String? trailingText) {
+  // --- MODIFICACIÓN: AÑADIDO PARÁMETRO onTap ---
+  Widget _buildPerfilItem(
+    String title,
+    String? trailingText, {
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       title: Text(title),
       trailing: Row(
@@ -228,7 +240,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
           const Icon(Icons.chevron_right, color: Colors.grey),
         ],
       ),
-      onTap: () {},
+      onTap: onTap, // Acción al pulsar
     );
   }
 
@@ -312,7 +324,6 @@ class _PrincipalPageState extends State<PrincipalPage> {
                 ),
                 onPressed: () {
                   Navigator.pop(context);
-
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -367,7 +378,6 @@ class _PrincipalPageState extends State<PrincipalPage> {
     return Scaffold(
       body: _selectedIndex == 0 ? _buildMapaView() : _buildPerfilView(),
       bottomNavigationBar: SafeArea(
-        // SOLUCIÓN PARA EL MENÚ INFERIOR
         child: Container(
           height: 80,
           decoration: const BoxDecoration(
