@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'viaje_page.dart';
 
 class PrincipalPage extends StatefulWidget {
   const PrincipalPage({super.key});
@@ -152,7 +153,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
                 radius: 50,
                 backgroundImage: AssetImage(
                   'assets/imagenes/usuario.png',
-                ), // Foto de perfil 
+                ), // Foto de perfil
               ),
               const SizedBox(height: 15),
               const Text(
@@ -245,7 +246,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
     );
   }
 
-  // --- VENTANA DE DETALLES CON SAFEAREA ---
+  // --- VENTANA DE DETALLES ---
   void _mostrarDetalles(
     String marca,
     String precio,
@@ -258,7 +259,6 @@ class _PrincipalPageState extends State<PrincipalPage> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => SafeArea(
-        // SOLUCIÓN PARA QUE NO SE TAPE CON BOTONES
         child: Container(
           margin: const EdgeInsets.all(10),
           padding: const EdgeInsets.all(15),
@@ -293,7 +293,7 @@ class _PrincipalPageState extends State<PrincipalPage> {
                     Icons.battery_charging_full,
                   ),
                   _buildInfoCell("Autonomía", autonomia, Icons.bolt),
-                  _buildInfoCell("Precio desbloqueo", "1.00€", Icons.lock_open),
+                  _buildInfoCell("Precio desbloqueo", "1.50€", Icons.lock_open),
                   _buildInfoCell(
                     "Precio por minuto",
                     precio,
@@ -310,7 +310,25 @@ class _PrincipalPageState extends State<PrincipalPage> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context);
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ViajePage(
+                        marca: marca,
+                        bateria: bateria,
+                        precioMinuto:
+                            double.tryParse(
+                              precio.replaceAll('€', '').trim(),
+                            ) ??
+                            0.45,
+                        precioDesbloqueo: 1.50,
+                      ),
+                    ),
+                  );
+                },
                 child: const Text(
                   "Coger patinete",
                   style: TextStyle(color: Colors.white, fontSize: 18),

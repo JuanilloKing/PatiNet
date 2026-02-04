@@ -21,7 +21,9 @@ class _LoginPageState extends State<LoginPage> {
         password: _passController.text.trim(),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Datos incorrectos")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Datos incorrectos")));
     }
   }
 
@@ -36,32 +38,71 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              const Text('PatiNet', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              const Text(
+                'PatiNet',
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 30),
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.asset('assets/imagenes/mapa.png', height: 220, width: double.infinity, fit: BoxFit.contain),
-              ),
-              const SizedBox(height: 40),
-              const Text('Todas las marcas de\npatinetes, en una sola app', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 15),
-              const Text('Compara precios, y elige el que más te convenga', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
-              const SizedBox(height: 30),
-              TextField(controller: _emailController, decoration: const InputDecoration(hintText: 'Email')),
-              TextField(controller: _passController, obscureText: true, decoration: const InputDecoration(hintText: 'Contraseña')),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity, height: 55,
-                child: ElevatedButton(
-                  onPressed: _login,
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0066CC), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                  child: const Text('Inicia Sesión', style: TextStyle(fontSize: 18)),
+                child: Image.asset(
+                  'assets/imagenes/mapa.png',
+                  height: 220,
+                  width: double.infinity,
+                  fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
+              const Text(
+                'Todas las marcas de\npatinetes, en una sola app',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+              const Text(
+                'Compara precios, y elige el que más te convenga',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+              const SizedBox(height: 30),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(hintText: 'Email'),
+              ),
+              TextField(
+                controller: _passController,
+                obscureText: true,
+                decoration: const InputDecoration(hintText: 'Contraseña'),
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0066CC),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'Inicia Sesión',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 1),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterPage())),
-                child: const Text('¿No tienes cuenta?', style: TextStyle(color: Color(0xFF0066CC))),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RegisterPage()),
+                ),
+                child: const Text(
+                  '¿No tienes cuenta?',
+                  style: TextStyle(color: Color(0xFF0066CC)),
+                ),
               ),
             ],
           ),
