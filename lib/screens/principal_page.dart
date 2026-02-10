@@ -16,9 +16,27 @@ class _PrincipalPageState extends State<PrincipalPage> {
   int _selectedIndex = 0;
   GoogleMapController? _mapController;
   final TextEditingController _searchController = TextEditingController();
+
   BitmapDescriptor? _greenIcon;
   BitmapDescriptor? _blueIcon;
+  BitmapDescriptor? _yellowIcon; // Añadido para Tier (si quisieras usarlo)
+
   Set<Marker> _markers = {};
+
+  // --- VARIABLES PARA FILTROS ---
+  bool _mostrarFiltros = false; // Controla si se ve el menú
+  double _filtroBateria = 0.0; // Valor del slider (0% a 100%)
+
+  // Estado de los checkboxes
+  Map<String, bool> _empresasSeleccionadas = {
+    'Lime': true,
+    'Bird': true,
+    'Tier': true,
+  };
+
+  // Cache de los datos crudos de Firestore para poder filtrar localmente
+  List<DocumentSnapshot> _todosLosPatinetes = [];
+
   static const CameraPosition _puntoInicial = CameraPosition(
     target: LatLng(36.6850, -6.1260),
     zoom: 14.0,
@@ -40,11 +58,11 @@ class _PrincipalPageState extends State<PrincipalPage> {
         const ImageConfiguration(size: Size(25, 25)),
         'assets/imagenes/scooter-blue.png',
       );
-      _escucharPatinetes();
+      // Si tienes un icono amarillo para Tier, cárgalo aquí, si no usaremos el verde por defecto
     } catch (e) {
       debugPrint("Error cargando assets: $e");
-      _escucharPatinetes();
     }
+    _escucharPatinetes();
   }
 
   void _escucharPatinetes() {
@@ -52,32 +70,203 @@ class _PrincipalPageState extends State<PrincipalPage> {
       snapshot,
     ) {
       if (!mounted) return;
-      Set<Marker> nuevosMarcadores = {};
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        double? lat = double.tryParse(data['latitud'].toString());
-        double? lng = double.tryParse(data['longitud'].toString());
-        if (lat == null || lng == null) continue;
-        BitmapDescriptor icono = data['color'] == 'verde'
-            ? (_greenIcon ?? BitmapDescriptor.defaultMarker)
-            : (_blueIcon ?? BitmapDescriptor.defaultMarker);
-        nuevosMarcadores.add(
-          Marker(
-            markerId: MarkerId(doc.id),
-            position: LatLng(lat, lng),
-            icon: icono,
-            onTap: () => _mostrarDetalles(
-              data['nombre'] ?? 'Sin nombre',
-              data['precio'] ?? '0.00€',
-              data['bateria'] ?? '0%',
-              data['autonomia'] ?? '0 km',
-              data['imagen'] ?? 'assets/imagenes/mapa.png',
-            ),
-          ),
-        );
-      }
-      setState(() => _markers = nuevosMarcadores);
+
+      // 1. Guardamos los datos crudos
+      _todosLosPatinetes = snapshot.docs;
+
+      // 2. Aplicamos los filtros actuales para generar los marcadores
+      _aplicarFiltrosYActualizarMapa();
     });
+  }
+
+  // --- LÓGICA DE FILTRADO ---
+  // --- LÓGICA DE FILTRADO MEJORADA Y ROBUSTA ---
+  void _aplicarFiltrosYActualizarMapa() {
+    Set<Marker> nuevosMarcadores = {};
+
+    for (var doc in _todosLosPatinetes) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      // 1. Coordenadas
+      double? lat = double.tryParse(data['latitud'].toString());
+      double? lng = double.tryParse(data['longitud'].toString());
+      if (lat == null || lng == null) continue;
+
+      // 2. Batería (ROBUSTO: Extraer solo números para evitar errores con %)
+      // Ejemplo: "86%" -> "86" -> 86
+      String bateriaRaw = data['bateria']?.toString() ?? '0';
+      String bateriaDigitos = bateriaRaw.replaceAll(RegExp(r'[^0-9]'), '');
+      int bateriaNivel = int.tryParse(bateriaDigitos) ?? 0;
+
+      // 3. Detectar Empresa (Normalizar a minúsculas)
+      // Usamos tanto el nombre como el color para asegurar que lo detectamos
+      String nombreRaw = (data['nombre']?.toString() ?? '').toLowerCase();
+      String colorRaw = (data['color']?.toString() ?? '').toLowerCase();
+
+      String empresaDetectada = 'Desconocida';
+
+      // Si el nombre contiene "lime" O el color es "verde" -> Es Lime
+      if (nombreRaw.contains('lime') || colorRaw == 'verde') {
+        empresaDetectada = 'Lime';
+      }
+      // Si el nombre contiene "bird" O el color es "azul" -> Es Bird
+      else if (nombreRaw.contains('bird') || colorRaw == 'azul') {
+        empresaDetectada = 'Bird';
+      } else if (nombreRaw.contains('tier')) {
+        empresaDetectada = 'Tier';
+      }
+
+      // --- APLICAR FILTROS ---
+
+      // A) Filtro Batería: Si tiene menos batería de la que pedimos, fuera.
+      if (bateriaNivel < _filtroBateria) continue;
+
+      // B) Filtro Empresa:
+      // Si detectamos la empresa, comprobamos si su casilla está marcada.
+      if (empresaDetectada != 'Desconocida') {
+        if (_empresasSeleccionadas[empresaDetectada] != true) {
+          continue; // Si "Lime" está desmarcado, no lo mostramos.
+        }
+      }
+
+      // --- ASIGNAR ICONO ---
+      BitmapDescriptor icono = BitmapDescriptor.defaultMarker;
+      if (empresaDetectada == 'Lime')
+        icono = _greenIcon ?? BitmapDescriptor.defaultMarker;
+      else if (empresaDetectada == 'Bird')
+        icono = _blueIcon ?? BitmapDescriptor.defaultMarker;
+
+      nuevosMarcadores.add(
+        Marker(
+          markerId: MarkerId(doc.id),
+          position: LatLng(lat, lng),
+          icon: icono,
+          onTap: () => _mostrarDetalles(
+            data['nombre'] ?? 'Patinete',
+            data['precio'] ?? '0.00€',
+            data['bateria'] ?? '0%',
+            data['autonomia'] ?? '0 km',
+            data['imagen'] ?? 'assets/imagenes/mapa.png',
+          ),
+        ),
+      );
+    }
+
+    setState(() {
+      _markers = nuevosMarcadores;
+    });
+  }
+
+  // --- WIDGET DEL MENÚ DE FILTROS ---
+  Widget _buildMenuFiltros() {
+    return Positioned(
+      top: 120,
+      left: 15,
+      child: Container(
+        width: 250,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE0E0E0),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Rango batería",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Slider(
+              value: _filtroBateria,
+              min: 0,
+              max: 100,
+              activeColor: Colors.purple,
+              inactiveColor: Colors.purple.withOpacity(0.2),
+              onChanged: (val) {
+                setState(() => _filtroBateria = val);
+              },
+            ),
+            Text(
+              "${_filtroBateria.toInt()}% - Aprox: ${_calcularKm(_filtroBateria)} km",
+              style: const TextStyle(fontSize: 14),
+            ),
+
+            const SizedBox(height: 15),
+
+            // CHECKBOXES EMPRESAS
+            const Text(
+              "Empresas",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 5),
+            _buildCheckboxEmpresa("Lime", Colors.green),
+            _buildCheckboxEmpresa("Bird", Colors.blue),
+            const SizedBox(height: 15),
+
+            // BOTÓN APLICAR
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  _aplicarFiltrosYActualizarMapa();
+                  setState(() => _mostrarFiltros = false);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0066CC),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  "Aplicar",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _calcularKm(double bateria) {
+    // Estimación simple: 100% = 25km (puedes ajustar la fórmula)
+    return ((bateria / 100) * 25).toStringAsFixed(0);
+  }
+
+  Widget _buildCheckboxEmpresa(String nombre, Color color) {
+    return Row(
+      children: [
+        const Text("• ", style: TextStyle(fontSize: 20)),
+        Text(nombre, style: const TextStyle(fontSize: 16)),
+        const SizedBox(width: 5),
+        Icon(
+          Icons.electric_scooter,
+          color: color,
+          size: 20,
+        ), // Icono del patinete
+        const Spacer(),
+        // Checkbox personalizado visualmente negro/gris oscuro
+        Transform.scale(
+          scale: 1.2,
+          child: Checkbox(
+            value: _empresasSeleccionadas[nombre],
+            activeColor: Colors.black87,
+            checkColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+            onChanged: (val) {
+              setState(() {
+                _empresasSeleccionadas[nombre] = val!;
+              });
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   // --- VISTA DEL MAPA ---
@@ -92,12 +281,26 @@ class _PrincipalPageState extends State<PrincipalPage> {
           zoomControlsEnabled: false,
           onMapCreated: (controller) => _mapController = controller,
         ),
+
+        // MENÚ DE FILTROS (Solo visible si _mostrarFiltros es true)
+        if (_mostrarFiltros) _buildMenuFiltros(),
+
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             child: Row(
               children: [
-                _buildSearchIcon(Icons.tune),
+                // BOTÓN SETTINGS CONECTADO
+                _buildSearchIcon(
+                  Icons.tune,
+                  size: 30,
+                  onPressed: () {
+                    setState(() {
+                      _mostrarFiltros =
+                          !_mostrarFiltros; // Alternar visibilidad
+                    });
+                  },
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Container(
@@ -135,7 +338,8 @@ class _PrincipalPageState extends State<PrincipalPage> {
     );
   }
 
-  // --- VISTA DEL PERFIL ---
+  // --- RESTO DEL CÓDIGO (PERFIL, DETALLES, ETC) SIN CAMBIOS IMPORTANTES ---
+
   Widget _buildPerfilView() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -168,8 +372,6 @@ class _PrincipalPageState extends State<PrincipalPage> {
                   children: [
                     _buildPerfilItem("Editar Nombre", null),
                     _buildPerfilItem("Editar Apellidos", null),
-
-                    // --- MODIFICACIÓN AQUÍ: AÑADIMOS NAVEGACIÓN ---
                     _buildPerfilItem(
                       "Ultimos viajes",
                       "Ver",
@@ -182,7 +384,6 @@ class _PrincipalPageState extends State<PrincipalPage> {
                         );
                       },
                     ),
-
                     _buildPerfilItem("Mas información", "Detalles"),
                     _buildPerfilItem("Modificar método de pago", "Modificar"),
                     _buildPerfilItem("Tamaño de letra", "Mediano"),
@@ -221,7 +422,6 @@ class _PrincipalPageState extends State<PrincipalPage> {
     );
   }
 
-  // --- MODIFICACIÓN: AÑADIDO PARÁMETRO onTap ---
   Widget _buildPerfilItem(
     String title,
     String? trailingText, {
@@ -240,11 +440,15 @@ class _PrincipalPageState extends State<PrincipalPage> {
           const Icon(Icons.chevron_right, color: Colors.grey),
         ],
       ),
-      onTap: onTap, // Acción al pulsar
+      onTap: onTap,
     );
   }
 
-  Widget _buildSearchIcon(IconData icon) {
+  Widget _buildSearchIcon(
+    IconData icon, {
+    double size = 24,
+    VoidCallback? onPressed,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -252,13 +456,12 @@ class _PrincipalPageState extends State<PrincipalPage> {
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
       ),
       child: IconButton(
-        icon: Icon(icon, color: Colors.black),
-        onPressed: () {},
+        icon: Icon(icon, color: Colors.black, size: size),
+        onPressed: onPressed,
       ),
     );
   }
 
-  // --- VENTANA DE DETALLES ---
   void _mostrarDetalles(
     String marca,
     String precio,

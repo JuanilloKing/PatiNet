@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // NUEVO: Para guardar datos
-import 'package:firebase_auth/firebase_auth.dart';     // NUEVO: Para saber quién guarda
+import 'package:firebase_auth/firebase_auth.dart'; // NUEVO: Para saber quién guarda
 
 class ViajePage extends StatefulWidget {
   final String marca;
@@ -60,7 +60,7 @@ class _ViajePageState extends State<ViajePage> {
     // 1. Calculamos los totales finales
     double precioMinutos = (_segundosTranscurridos / 60) * widget.precioMinuto;
     double totalPagar = widget.precioDesbloqueo + precioMinutos;
-    
+
     // 2. Obtenemos el usuario actual
     User? usuario = FirebaseAuth.instance.currentUser;
 
@@ -69,16 +69,16 @@ class _ViajePageState extends State<ViajePage> {
         // 3. Guardamos en la subcolección 'historial' del usuario
         await FirebaseFirestore.instance
             .collection('usuarios') // Colección usuarios
-            .doc(usuario.uid)       // Documento del usuario actual
-            .collection('historial')// Subcolección historial
+            .doc(usuario.uid) // Documento del usuario actual
+            .collection('historial') // Subcolección historial
             .add({
-          'marca': widget.marca,
-          'fecha': Timestamp.now(),
-          'duracion_segundos': _segundosTranscurridos,
-          'total_pagado': totalPagar,
-          'precio_minuto': widget.precioMinuto,
-          'precio_desbloqueo': widget.precioDesbloqueo,
-        });
+              'marca': widget.marca,
+              'fecha': Timestamp.now(),
+              'duracion_segundos': _segundosTranscurridos,
+              'total_pagado': totalPagar,
+              'precio_minuto': widget.precioMinuto,
+              'precio_desbloqueo': widget.precioDesbloqueo,
+            });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -129,8 +129,14 @@ class _ViajePageState extends State<ViajePage> {
                   child: Row(
                     children: [
                       Container(
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const IconButton(icon: Icon(Icons.settings, size: 30), onPressed: null),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const IconButton(
+                          icon: Icon(Icons.tune, size: 30),
+                          onPressed: null,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -141,13 +147,18 @@ class _ViajePageState extends State<ViajePage> {
                             color: Colors.white,
                             border: Border.all(color: Colors.black12),
                             borderRadius: BorderRadius.circular(30),
-                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black12, blurRadius: 4),
+                            ],
                           ),
                           child: Row(
                             children: const [
                               Icon(Icons.menu),
                               SizedBox(width: 10),
-                              Text("Buscar ciudad", style: TextStyle(color: Colors.grey)),
+                              Text(
+                                "Buscar ciudad",
+                                style: TextStyle(color: Colors.grey),
+                              ),
                               Spacer(),
                               Icon(Icons.search),
                             ],
@@ -162,13 +173,24 @@ class _ViajePageState extends State<ViajePage> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.grey[200]?.withOpacity(0.95),
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
+                    ),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 10),
+                    ],
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text("patinete desbloqueado", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                      const Text(
+                        "patinete desbloqueado",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 15),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -176,19 +198,38 @@ class _ViajePageState extends State<ViajePage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(widget.marca, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              Text(
+                                widget.marca,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const Text("Patin Nº0230"),
                             ],
                           ),
-                          _infoBox("Bateria\n${widget.bateria}", Icons.battery_charging_full),
+                          _infoBox(
+                            "Bateria\n${widget.bateria}",
+                            Icons.battery_charging_full,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 15),
                       Row(
                         children: [
-                          Expanded(child: _infoBox("Tiempo de uso\n${_formatearTiempo(_segundosTranscurridos)}", null)),
+                          Expanded(
+                            child: _infoBox(
+                              "Tiempo de uso\n${_formatearTiempo(_segundosTranscurridos)}",
+                              null,
+                            ),
+                          ),
                           const SizedBox(width: 10),
-                          Expanded(child: _infoBox("Costo minuto:  ${widget.precioMinuto}€", null)),
+                          Expanded(
+                            child: _infoBox(
+                              "Costo minuto:  ${widget.precioMinuto}€",
+                              null,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 15),
@@ -202,11 +243,19 @@ class _ViajePageState extends State<ViajePage> {
                         children: [
                           // AQUÍ CONECTAMOS LA FUNCIÓN DE GUARDAR
                           Expanded(
-                            child: _btnAccion("Estacionar", Colors.blue, _estacionarYGuardar),
+                            child: _btnAccion(
+                              "Estacionar",
+                              Colors.blue,
+                              _estacionarYGuardar,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _btnAccion("Parar (5 min max)", Colors.red, () {}),
+                            child: _btnAccion(
+                              "Parar (5 min max)",
+                              Colors.red,
+                              () {},
+                            ),
                           ),
                         ],
                       ),
@@ -233,8 +282,15 @@ class _ViajePageState extends State<ViajePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(texto, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12)),
-          if (icono != null) ...[const SizedBox(width: 10), Icon(icono, size: 40)],
+          Text(
+            texto,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+          ),
+          if (icono != null) ...[
+            const SizedBox(width: 10),
+            Icon(icono, size: 40),
+          ],
         ],
       ),
     );
@@ -248,7 +304,13 @@ class _ViajePageState extends State<ViajePage> {
         padding: const EdgeInsets.symmetric(vertical: 15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
-      child: Text(texto, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      child: Text(
+        texto,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

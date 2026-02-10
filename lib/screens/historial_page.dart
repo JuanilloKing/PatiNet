@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart'; // Añade intl a tu pubspec.yaml si quieres formatear fechas bonitas
 
 class HistorialPage extends StatelessWidget {
   const HistorialPage({super.key});
