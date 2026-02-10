@@ -1,16 +1,23 @@
-# patinet
+# Patinet
 
-A new Flutter project.
+Proyecto de prueba para la asignatura **Desarrollo de Interfaces** de **2DAM**.  
+Aplicación Android hecha con Flutter.
 
-## Getting Started
+## Descripción
+Patinet es una app experimental para explorar diseño de interfaces, navegación y funcionalidades básicas.
 
-This project is a starting point for a Flutter application.
+## Requisitos
+- Flutter instalado
+- Android Studio o dispositivo Android
 
-A few resources to get you started if this is your first Flutter project:
+## Ejecución rápida
+```bash
+flutter pub get
+flutter run
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Estado
+Proyecto en desarrollo.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Autor
+2DAM — Desarrollo de Interfaces
