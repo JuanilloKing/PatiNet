@@ -20,4 +20,4 @@ flutter run
 Proyecto en desarrollo.
 
 ## Autor
-2DAM — Desarrollo de Interfaces
+Eduardo Sumariva Salgado - 2DAM — Desarrollo de Interfaces
